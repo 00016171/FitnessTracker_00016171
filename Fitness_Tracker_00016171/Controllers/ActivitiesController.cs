@@ -1,108 +1,66 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using Fitness_Tracker_00016171.Models;
+using Fitness_Tracker_00016171.Repository;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Fitness_Tracker_00016171.Data;
-using Fitness_Tracker_00016171.Models;
+using System.Threading.Tasks;
 
 namespace Fitness_Tracker_00016171.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
-    public class ActivitiesController : ControllerBase
+    [Route("api/[controller]")]
+    public class ActivityController : ControllerBase
     {
-        private readonly FitnessContext _context;
+        private readonly IRepository<Activity> _activityRepository;
 
-        public ActivitiesController(FitnessContext context)
+        public ActivityController(IRepository<Activity> activityRepository)
         {
-            _context = context;
+            _activityRepository = activityRepository;
         }
 
-        // GET: api/Activities
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Activity>>> GetActivity()
+        public async Task<IActionResult> GetAllActivities()
         {
-            return await _context.Activity.ToListAsync();
+            var activities = await _activityRepository.GetAllAsync();
+            return Ok(activities);
         }
 
-        // GET: api/Activities/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Activity>> GetActivity(int id)
+        public async Task<IActionResult> GetActivityById(int id)
         {
-            var activity = await _context.Activity.FindAsync(id);
-
+            var activity = await _activityRepository.GetByIDAsync(id);
             if (activity == null)
-            {
                 return NotFound();
-            }
-
-            return activity;
+            return Ok(activity);
         }
 
-        // PUT: api/Activities/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutActivity(int id, Activity activity)
+        [HttpPost]
+        public async Task<IActionResult> CreateActivity([FromBody] Activity activity)
         {
-            if (id != activity.Id)
-            {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            await _activityRepository.AddAsync(activity);
+            return CreatedAtAction(nameof(GetActivityById), new { id = activity.Id }, activity);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateActivity(int id, [FromBody] Activity activity)
+        {
+            if (id != activity.Id || !ModelState.IsValid)
                 return BadRequest();
-            }
 
-            _context.Entry(activity).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ActivityExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
+            await _activityRepository.UpdateAsync(activity);
             return NoContent();
         }
 
-        // POST: api/Activities
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Activity>> PostActivity(Activity activity)
-        {
-            _context.Activity.Add(activity);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetActivity", new { id = activity.Id }, activity);
-        }
-
-        // DELETE: api/Activities/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteActivity(int id)
         {
-            var activity = await _context.Activity.FindAsync(id);
+            var activity = await _activityRepository.GetByIDAsync(id);
             if (activity == null)
-            {
                 return NotFound();
-            }
 
-            _context.Activity.Remove(activity);
-            await _context.SaveChangesAsync();
-
+            await _activityRepository.DeleteAsync(id);
             return NoContent();
-        }
-
-        private bool ActivityExists(int id)
-        {
-            return _context.Activity.Any(e => e.Id == id);
         }
     }
 }

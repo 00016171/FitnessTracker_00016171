@@ -1,108 +1,66 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using Fitness_Tracker_00016171.Models;
+using Fitness_Tracker_00016171.Repository;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Fitness_Tracker_00016171.Data;
-using Fitness_Tracker_00016171.Models;
+using System.Threading.Tasks;
 
 namespace Fitness_Tracker_00016171.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
-    public class UsersController : ControllerBase
+    [Route("api/[controller]")]
+    public class UserController : ControllerBase
     {
-        private readonly FitnessContext _context;
+        private readonly IRepository<User> _userRepository;
 
-        public UsersController(FitnessContext context)
+        public UserController(IRepository<User> userRepository)
         {
-            _context = context;
+            _userRepository = userRepository;
         }
 
-        // GET: api/Users
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetUser()
+        public async Task<IActionResult> GetAllUsers()
         {
-            return await _context.User.ToListAsync();
+            var users = await _userRepository.GetAllAsync();
+            return Ok(users);
         }
 
-        // GET: api/Users/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<User>> GetUser(int id)
+        public async Task<IActionResult> GetUserById(int id)
         {
-            var user = await _context.User.FindAsync(id);
-
+            var user = await _userRepository.GetByIDAsync(id);
             if (user == null)
-            {
                 return NotFound();
-            }
-
-            return user;
+            return Ok(user);
         }
 
-        // PUT: api/Users/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutUser(int id, User user)
+        [HttpPost]
+        public async Task<IActionResult> CreateUser([FromBody] User user)
         {
-            if (id != user.Id)
-            {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            await _userRepository.AddAsync(user);
+            return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, user);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] User user)
+        {
+            if (id != user.Id || !ModelState.IsValid)
                 return BadRequest();
-            }
 
-            _context.Entry(user).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!UserExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
+            await _userRepository.UpdateAsync(user);
             return NoContent();
         }
 
-        // POST: api/Users
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<User>> PostUser(User user)
-        {
-            _context.User.Add(user);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetUser", new { id = user.Id }, user);
-        }
-
-        // DELETE: api/Users/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            var user = await _context.User.FindAsync(id);
+            var user = await _userRepository.GetByIDAsync(id);
             if (user == null)
-            {
                 return NotFound();
-            }
 
-            _context.User.Remove(user);
-            await _context.SaveChangesAsync();
-
+            await _userRepository.DeleteAsync(id);
             return NoContent();
-        }
-
-        private bool UserExists(int id)
-        {
-            return _context.User.Any(e => e.Id == id);
         }
     }
 }
