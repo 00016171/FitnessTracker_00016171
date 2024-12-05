@@ -14,11 +14,20 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<FitnessContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlite(builder.Configuration.GetConnectionString("SQLiteConnection")));
+
 
 builder.Services.AddScoped<IRepository<Fitness_Tracker_00016171.Models.Activity>, ActivityRepository>();
 builder.Services.AddScoped<IRepository<User>, UserRepository>();
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", builder =>
+    {
+        builder.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
 
 
 var app = builder.Build();
@@ -30,14 +39,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors(builder =>
-    builder
-           .AllowAnyHeader()
-           .AllowAnyMethod()
-           .AllowAnyHeader()
-           
-);  
-
+app.UseCors("AllowAll");
 
 app.UseAuthorization();
 
