@@ -30,9 +30,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+app.UseCors(builder =>
+    builder
+           .AllowAnyHeader()
+           .AllowAnyMethod()
+           .AllowAnyHeader()
+           
+);  
+
 
 app.UseAuthorization();
+
+
 
 app.MapControllers();
 

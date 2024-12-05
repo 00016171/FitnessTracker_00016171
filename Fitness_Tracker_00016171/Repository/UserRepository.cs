@@ -15,14 +15,12 @@ namespace Fitness_Tracker_00016171.Repository
             _context = context;
         }
 
-        // Add or create a new user
         public async Task AddAsync(User user)
         {
             await _context.User.AddAsync(user);
             await _context.SaveChangesAsync();
         }
 
-        // Delete a user by ID
         public async Task DeleteAsync(int id)
         {
             var user = await _context.User.FindAsync(id);
@@ -33,19 +31,16 @@ namespace Fitness_Tracker_00016171.Repository
             }
         }
 
-        // Retrieve all users
         public async Task<IEnumerable<User>> GetAllAsync()
         {
             return await _context.User.Include(u => u.Activities).ToListAsync();
         }
 
-        // Retrieve a specific user by ID
         public async Task<User> GetByIDAsync(int id)
         {
             return await _context.User.Include(u => u.Activities).FirstOrDefaultAsync(u => u.Id == id);
         }
 
-        // Update an existing user
         public async Task UpdateAsync(User user)
         {
             _context.Entry(user).State = EntityState.Modified;
